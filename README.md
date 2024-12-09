@@ -59,11 +59,7 @@ Clonar el repositorio:
 git clone https://github.com/giaaaBiEi8/TUIA_PDI_TP3.git
 cd TUIA_PDI_TP3
 ```
-Ejecutar el script: Asegúrese de que el video esté en la misma carpeta que el script o proporcione la ruta completa.
 
-```bash
-python programa.py --video <ruta_al_video>
-```
 
 
 ### **Autores**
