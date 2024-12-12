@@ -2,12 +2,11 @@ import cv2
 import numpy as np
 
 def load_video(video_path):
-    """cargamos video y fijamos que funciones"""
+    """cargamos video y chequeamos que funcione"""
     cap = cv2.VideoCapture(video_path)
-    ret, frame = cap.read()
-    if not ret:
+    if not cap.isOpened(): 
         print("No se pudo abrir el video.")
-    return cap, frame
+    return cap
 
 def create_game_area_mask(frame):
     """crea una mascara para los valores verdes de la tela"""
@@ -48,12 +47,33 @@ def count_dots_on_die(die_region):
     contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     return len(contours)
 
-def process_video(video_path, min_contours=5, stability_frames=20):
+
+def process_video(video_path, output_path="output.avi", min_contours=5, stability_frames=20):
     """función main"""
-    # Initialize video
-    cap, first_frame = load_video(video_path)
-    game_area_mask = create_game_area_mask(first_frame)
+
+    try:
+        cap = load_video(video_path)
+    except ValueError as e:
+        print(e)
+        return
     
+    # Initialize video
+    ret, first_frame = cap.read()
+    if not ret:
+        print("Error al leer el primer frame del video.")
+        cap.release()
+        return
+    
+    game_area_mask = create_game_area_mask(first_frame)
+
+    #fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))  
+    fps = int(cap.get(cv2.CAP_PROP_FPS))  
+
+    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width,height))
+    # out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
+
     # Track stability
     frame_count = 0
     stable_frame_count = 0
@@ -73,10 +93,9 @@ def process_video(video_path, min_contours=5, stability_frames=20):
         
         # Draw contours for visualization
         output_image = game_area.copy()
-        output_image_final = game_area.copy()
         cv2.drawContours(output_image, valid_contours, -1, (255, 0, 0), thickness=2)
-        cv2.imshow('Dados detectados', output_image)
-        
+        out.write(output_image)
+
         # Check stability
         if len(valid_contours) >= min_contours:
             stable_frame_count += 1
@@ -111,19 +130,26 @@ def process_video(video_path, min_contours=5, stability_frames=20):
         # Draw BoundingRect and numbers on the last frame
         for i, contour in enumerate(last_contours):
             x, y, w, h = cv2.boundingRect(contour)
-            cv2.rectangle(output_image_final, (x, y), (x + w, y + h), (255, 0, 0), thickness=2)
-            cv2.putText(output_image_final, str(dice_values[i]), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 
+            cv2.rectangle(last_frame_image, (x, y), (x + w, y + h), (255, 0, 0), thickness=2)
+            cv2.putText(last_frame_image, str(dice_values[i]), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale=0.5, color=(255, 0, 0), thickness=2)
-        cv2.destroyAllWindows()
-        cv2.imshow('Último frame con BoundingRect', output_image_final)
-        
+            
+        # cv2.destroyAllWindows()
+        cv2.imshow('Último frame con BoundingRect', last_frame_image)
+        out.write(last_frame_image)                                                              # mostrarlo varias vecesssss
+
         # Wait for user to press a key
-        print("Presiona cualquier tecla para cerrar...")
+        # print("Presiona cualquier tecla para cerrar...")
+        print(f'Suma total: {sum(dice_values)}')
+        print("Video guardado en:", output_path)
         cv2.waitKey(0)
-        cap.release()
-        cv2.destroyAllWindows()
-        return f'Suma total: {sum(dice_values)}'
     
     cap.release()
+    out.release()
     cv2.destroyAllWindows()
-    return "No se detectaron dados"
+
+
+
+process_video('tirada_3.mp4', 'output.avi', min_contours=5, stability_frames=20)
+
+
