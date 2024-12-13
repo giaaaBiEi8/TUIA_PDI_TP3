@@ -30,6 +30,14 @@ bash
 pip install opencv-python-headless numpy
 ```
 
+### **Ejecución por línea de comandos**
+Situados en el directorio donde se descargó el repositorio, se debe ejecutar la siguiente línea de comando:
+```
+bash
+py deteccion_dados.py "ruta_absoluta_del_video_a_procesar"
+```
+Una vez procesado el video la salida se guardará en la misma carpeta bajo el nombre del video y una extensión "_save".
+
 ### **Estructura del Script**
 #### **Funciones Principales**
 
